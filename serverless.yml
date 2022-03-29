@@ -1,0 +1,78 @@
+service: demo
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+plugins:
+  - serverless-step-functions
+
+functions:
+  Add:
+    handler: handler.add
+
+  Double:
+    handler: handler.double
+
+  DoubleBigNumber:
+    handler: handler.doublebignumber
+
+stepFunctions:
+  stateMachines:
+    maths:
+      name: simple-maths
+      definition:
+        Comment: simple-maths
+        StartAt: Add
+        States:
+          Add:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [Add, Arn]
+            Next: IsBigNumber
+          IsBigNumber:
+            Type: Choice
+            Choices:
+              - Variable: $
+                NumericGreaterThan: 50
+                Next: DoubleBigNumber
+            Default: Double
+          Double:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [Double, Arn]
+            End: True
+            Retry: [
+                    {
+                      "ErrorEquals": [
+                        "NumberIsTooBig"
+                      ],
+                      "BackoffRate": 1,
+                      "IntervalSeconds": 1,
+                      "MaxAttempts": 10
+                    },
+                    {
+                      "ErrorEquals": [
+                        "States.ALL"
+                      ],
+                      "BackoffRate": 1,
+                      "IntervalSeconds": 1,
+                      "MaxAttempts": 2
+                    }            
+                  ]
+            Catch: [
+                    {
+                      "ErrorEquals": [
+                        "NumberIsTooBig"
+                      ],
+                      "ResultPath": "$",
+                      "Next": "DoubleBigNumber"
+                    }
+                  ]
+          DoubleBigNumber:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [DoubleBigNumber, Arn]
+            End: True
