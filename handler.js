@@ -8,7 +8,7 @@ module.exports.add = async ({ x, y}) => {
 class NumberIsTooBig extends Error{ 
 
   constructor(n) {
-    super(`${n} is too big..`)
+    super(`${n} is too big.......`)
     this.name = 'NumberIsTooBig'
     Error.captureStackTrace(this,NumberIsTooBig)
   }
